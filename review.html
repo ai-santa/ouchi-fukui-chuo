@@ -701,15 +701,24 @@ function buildVariation() {
     '言い切りで終わる',
     '余韻を残して終わる',
     '軽いお礼で終わる',
-    'また行く等のひと言で終わる',
-    '特にまとめず途中のような終わり方にする'
+    'また行く・また相談したい等のひと言で終わる'
   ]);
   // 改行：8割は段落に分けて改行あり、2割はひと続き
   const lineBreaks = Math.random() < 0.8;
   // 絵文字は確率制（性別固定をやめる）。男性以外で約45%、使うときだけ1〜2個
   const emojiOn = (state.gender !== 'male') && (Math.random() < 0.45);
   const emojiN = emojiOn ? (1 + Math.floor(Math.random() * 2)) : 0;
-  return { targetLen, maxPts, hint: conf.hint, opening, register, enthusiasm, ending, lineBreaks, emojiOn, emojiN };
+  // 締めの記号もバラす（「。」ばかりにしない）
+  const closers = [
+    'ふつうに「。」で締める',
+    '最後を「！」で締めて気持ちを込める',
+    '最後を「!!」で勢いよく締める',
+    '体言止め・言い切りで、あえて句点をつけずに締める',
+    '「…」で余韻を残して締める'
+  ];
+  if (emojiOn) closers.push('最後を絵文字で締める');
+  const closer = pick(closers);
+  return { targetLen, maxPts, hint: conf.hint, opening, register, enthusiasm, ending, lineBreaks, emojiOn, emojiN, closer };
 }
 
 async function generateReview() {
@@ -740,6 +749,7 @@ function buildSystemPrompt() {
 ・完璧に整えない。きれいな起承転結にしない。話し言葉で、少し横道にそれたり言いさしがあってもよい（整いすぎると、みんな同じ言い回しになって不自然）。
 ・欠点ゼロの全面ベタ褒めにしない。満足の温度は指定に従い、落ち着いた控えめもOK。
 ・ただし“薄い口コミ”は絶対NG。「話しやすかった」「良かったです」だけで終わらせない。なぜそう感じたか・どんな場面でそう思ったか、具体的な理由やちょっとした体験を必ず入れて、読んだ人が「行ってみたい」と思える中身にする。最低でも150字は書く。
+・文章は最後まで言い切って必ず完結させる。文の途中（「〜ので」「〜て」など）でぶつ切りにして終わらせない（体言止めで締めるのはOK）。
 ・宣伝文句・キャッチコピー・具体的な数字（「約○○社」「中立的な立場」など）をそのまま使わない。言いたいことは自分のふつうの言葉に置き換えるか、いっそ書かない。
 ・毎回、書き出し・言い回し・語彙・終わり方を変える。前に書いたものと似せない。
 ・「おすすめです」「ぜひ一度」などの定番のしめ言葉は使わない（終わり方は指定に従って毎回変える）。
@@ -805,6 +815,7 @@ function buildPrompt(v) {
 ・長さ：${v.hint}（${v.targetLen}字前後。必ず150字以上にする。短くても中身は薄くしない）
 ・改行：${v.lineBreaks ? '読みやすいように2〜3個の短い段落に改行で分ける' : '改行せず、ひと続きの文章で書く'}
 ・絵文字：${emojiInstr}
+・締めの記号：${v.closer}（必ず文を最後まで言い切ってから締める。言いかけで切らない）
 
 【この人】性別=${genderText} ／ 年代=${ageText}
 【利用したサービス】${serviceLabels.join('・') || 'なし'}（全部書かなくてよい）
