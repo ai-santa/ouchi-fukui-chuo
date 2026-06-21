@@ -385,7 +385,6 @@
   </style>
 </head>
 <body>
-
 <div id="bg-watermark" aria-hidden="true"></div>
 
 <div class="header">
@@ -413,7 +412,7 @@
 
 <!-- STEP 1: Q① 利用サービス -->
 <div class="card step" id="step-1">
-  <div class="step-label">Q 1 / 7</div>
+  <div class="step-label">Q 1 / 8</div>
   <div class="question-title">ご利用いただいたトレーニングの<br>目的を教えてください</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="service-group"></div>
@@ -425,7 +424,7 @@
 
 <!-- STEP 2: Q② 性別・年代 -->
 <div class="card step" id="step-2">
-  <div class="step-label">Q 2 / 7</div>
+  <div class="step-label">Q 2 / 8</div>
   <div class="question-title">性別と年代を教えてください</div>
   <div class="question-sub">クチコミの文体に反映されます</div>
   <div class="gender-age-wrap">
@@ -455,7 +454,7 @@
 
 <!-- STEP 3: Q③ 良かった点 -->
 <div class="card step" id="step-3">
-  <div class="step-label">Q 3 / 7</div>
+  <div class="step-label">Q 3 / 8</div>
   <div class="question-title">セッションで良かった点を<br>教えてください</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="good-points-group"></div>
@@ -467,7 +466,7 @@
 
 <!-- STEP 4: Q④ おすすめしたい方 -->
 <div class="card step" id="step-4">
-  <div class="step-label">Q 4 / 7</div>
+  <div class="step-label">Q 4 / 8</div>
   <div class="question-title">どんな方におすすめしたいですか？</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="recommendation-group"></div>
@@ -479,7 +478,7 @@
 
 <!-- STEP 5: Q⑤ 前後の変化 -->
 <div class="card step" id="step-5">
-  <div class="step-label">Q 5 / 7</div>
+  <div class="step-label">Q 5 / 8</div>
   <div class="question-title">通い始めて、どんな変化が<br>ありましたか？</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="changes-group"></div>
@@ -491,7 +490,7 @@
 
 <!-- STEP 6: Q⑥ スタッフ・施設の印象 -->
 <div class="card step" id="step-6">
-  <div class="step-label">Q 6 / 7</div>
+  <div class="step-label">Q 6 / 8</div>
   <div class="question-title">トレーナーや施設の印象を<br>教えてください</div>
   <div class="question-sub">複数選択できます</div>
   <div class="checkbox-group" id="staff-group"></div>
@@ -503,13 +502,26 @@
 
 <!-- STEP 7: Q⑦ 自由記述 -->
 <div class="card step" id="step-7">
-  <div class="step-label">Q 7 / 7</div>
+  <div class="step-label">Q 7 / 8</div>
   <div class="question-title">その他、自由にお書きください</div>
   <div class="question-sub">任意・空欄でも大丈夫です</div>
   <textarea id="free-text" placeholder="良かった点・改善してほしい点など、なんでもお聞かせください"></textarea>
   <div class="mt-16">
-    <button class="btn btn-primary" id="btn-generate" onclick="generateReview()">クチコミを作成する</button>
+    <button class="btn btn-primary" onclick="goStep(8)">次へ</button>
     <button class="btn btn-secondary" onclick="goStep(6)">戻る</button>
+  </div>
+</div>
+
+<!-- STEP 8: Q⑧ 満足度 -->
+<div class="card step" id="step-8">
+  <div class="step-label">Q 8 / 8</div>
+  <div class="question-title">総合的なご満足度を<br>教えてください</div>
+  <div class="question-sub">10が最高・1が最低です</div>
+  <div class="score-group" id="score-group"></div>
+  <div class="score-labels"><span>← 低い</span><span>高い →</span></div>
+  <div class="mt-16">
+    <button class="btn btn-primary" id="btn-generate" onclick="generateReview()" disabled>クチコミを作成する</button>
+    <button class="btn btn-secondary" onclick="goStep(7)">戻る</button>
   </div>
 </div>
 
@@ -549,9 +561,9 @@
 const state = {
   services: [], gender: null, age: null,
   goodPoints: [], recommendations: [], changes: [],
-  staffImpressions: [], freeText: ""
+  staffImpressions: [], freeText: "", score: null
 };
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 window.addEventListener('DOMContentLoaded', () => {
   applyConfig();
@@ -559,6 +571,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildCheckboxGroup('recommendation-group', SALON_CONFIG.recommendations, 'recommendations', 'btn-step4-next');
   buildCheckboxGroup('changes-group', SALON_CONFIG.changes, 'changes', 'btn-step5-next');
   buildCheckboxGroup('staff-group', SALON_CONFIG.staffImpressions, 'staffImpressions', 'btn-step6-next');
+  buildScoreButtons();
 });
 
 function applyConfig() {
@@ -664,72 +677,30 @@ function toggleCheck(id, el, stateKey, btnId) {
   document.getElementById(btnId).disabled = state[stateKey].length === 0;
 }
 
-function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
-function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-
-// 毎回ランダムに変える要素（長さ・項目数・書き出し・口調・満足の温度・終わり方・絵文字）
-// → 「整うと言い回しが固定化する」ため、わざと崩し方・温度・終わり方をバラして
-//    いろいろな人が書いた自然な口コミに見せる（やらせ感を消す）
-function buildVariation() {
-  // 長さは3段階だが、最低でも150字は確保（薄い・淡泊な口コミは出さない）
-  const targetLen = pick([200, 280, 380]);
-  // maxPts＝1件に盛り込む体験ポイントの上限。選んだ項目は基本すべて反映し、
-  // 長さに対して多すぎるときだけこの上限まで間引く（選択を捨てすぎない）
-  const conf = {
-    200: { maxPts: 4, hint: '短めでも中身はしっかり。4〜5文' },
-    280: { maxPts: 6, hint: 'ふつう。6〜7文くらい' },
-    380: { maxPts: 8, hint: 'しっかり詳しめ。8〜10文' }
-  }[targetLen];
-  const maxPts = conf.maxPts;
-  const opening = pick([
-    '満足した気持ち（結論）から書き始める',
-    '来店のきっかけ・利用前の悩みから書き始める',
-    '印象に残った場面から書き始める',
-    '率直なひと言から書き始める',
-    '前置きなくいきなり本題から書き始める'
-  ]);
-  // 口調はペルソナ＋ランダム。ただし極端にはしない
-  const register = pick(['ていねいめの口調', 'ふつうの口調', 'ややくだけた話し言葉']);
-  // 満足の温度をバラす（全部が絶賛＝やらせ感を防ぐ）。ただし「薄さ」とは別物
-  const enthusiasm = pick([
-    '落ち着いた控えめな温度（誇張しない。でも中身は具体的に書く）',
-    'ふつうに満足している温度',
-    'かなり満足していて少し熱がこもる温度'
-  ]);
-  // 終わり方をバラす（「おすすめです」定番締めを避ける）
-  const ending = pick([
-    '言い切りで終わる',
-    '余韻を残して終わる',
-    '軽いお礼で終わる',
-    'また行く・また相談したい等のひと言で終わる'
-  ]);
-  // 改行：8割は段落に分けて改行あり、2割はひと続き
-  const lineBreaks = Math.random() < 0.8;
-  // 絵文字は確率制（性別固定をやめる）。男性以外で約45%、使うときだけ1〜2個
-  const emojiOn = (state.gender !== 'male') && (Math.random() < 0.45);
-  const emojiN = emojiOn ? (1 + Math.floor(Math.random() * 2)) : 0;
-  // 締めの記号もバラす（「。」ばかりにしない）
-  const closers = [
-    'ふつうに「。」で締める',
-    '最後を「！」で締めて気持ちを込める',
-    '最後を「!!」で勢いよく締める',
-    '体言止め・言い切りで、あえて句点をつけずに締める',
-    '「…」で余韻を残して締める'
-  ];
-  if (emojiOn) closers.push('最後を絵文字で締める');
-  const closer = pick(closers);
-  return { targetLen, maxPts, hint: conf.hint, opening, register, enthusiasm, ending, lineBreaks, emojiOn, emojiN, closer };
+function buildScoreButtons() {
+  const g = document.getElementById('score-group');
+  for (let i = 10; i >= 1; i--) {
+    const el = document.createElement('div');
+    el.className = 'score-btn';
+    el.textContent = i;
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      state.score = i;
+      document.getElementById('btn-generate').disabled = false;
+    });
+    g.appendChild(el);
+  }
 }
 
 async function generateReview() {
   state.freeText = document.getElementById('free-text').value.trim();
-  const v = buildVariation();
   goStep(9);
   try {
     const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: buildSystemPrompt(), messages: [{ role: 'user', content: buildPrompt(v) }] })
+      body: JSON.stringify({ system: buildSystemPrompt(), messages: [{ role: 'user', content: buildPrompt() }] })
     });
     const data = await res.json();
     document.getElementById('review-result').textContent = data.content?.[0]?.text || "生成に失敗しました。もう一度お試しください。";
@@ -741,91 +712,79 @@ async function generateReview() {
   }
 }
 
-// ── system（毎回同じ＝固定。人格と「人間らしさ」のルール）──
 function buildSystemPrompt() {
-  return `あなたは、実際にお店を利用した「ふつうの一般人」になりきって、Googleクチコミを1件書きます。プロのライターではありません。文章が得意でない人も含めた“その辺にいる普通の人”が、スマホでさっと書いた口コミのリアルさを再現してください。
+  return `あなたはGoogleクチコミの文章を自然に書くアシスタントです。
+以下のルールを厳守してください。
 
-【人間らしさ（最重要）】
-・完璧に整えない。きれいな起承転結にしない。話し言葉で、少し横道にそれたり言いさしがあってもよい（整いすぎると、みんな同じ言い回しになって不自然）。
-・欠点ゼロの全面ベタ褒めにしない。満足の温度は指定に従い、落ち着いた控えめもOK。
-・ただし“薄い口コミ”は絶対NG。「話しやすかった」「良かったです」だけで終わらせない。なぜそう感じたか・どんな場面でそう思ったか、具体的な理由やちょっとした体験を必ず入れて、読んだ人が「行ってみたい」と思える中身にする。最低でも150字は書く。
-・文章は最後まで言い切って必ず完結させる。文の途中（「〜ので」「〜て」など）でぶつ切りにして終わらせない（体言止めで締めるのはOK）。
-・宣伝文句・キャッチコピー・具体的な数字（「約○○社」「中立的な立場」など）をそのまま使わない。言いたいことは自分のふつうの言葉に置き換えるか、いっそ書かない。
-・毎回、書き出し・言い回し・語彙・終わり方を変える。前に書いたものと似せない。
-・「おすすめです」「ぜひ一度」などの定番のしめ言葉は使わない（終わり方は指定に従って毎回変える）。
+【文体ルール（性別・年代別）】
+・女性20代以下：友達感覚・元気・若い表現
+・女性30代：親しみやすく温かみのある表現
+・女性40代：丁寧で経験の深さが感じられる表現
+・女性50代以上：穏やか・落ち着いた大人の表現
+・男性20代以下：率直・短め・若い男性らしい表現
+・男性30代：端的・具体的な表現
+・男性40代：誠実・信頼感のある表現
+・男性50代以上：簡潔・格調・重みのある表現
+・未回答：自然で読みやすい表現
 
-【捏造の線引き】
-・来店のきっかけや状況は、当たり障りのない一般的な範囲なら自然に補ってよい（例：迷っていた、人に勧められた等）。
-・スタッフ名・具体的な出来事・断定的な事実は、与えられた情報になければ作らない。嘘になることは書かない。
+【文字数ルール】
+・満足度10：約400文字
+・満足度9：約300文字
+・満足度8以下：約200文字
 
-【文体】
-・性別・年代の雰囲気はにじませる程度（若め＝少し砕け、年配＝落ち着き）。ただし極端にしない。
-・絵文字は指定があるときだけ、自然な位置に少しだけ。なければ使わない。絵文字の直後は改行する。
+【絵文字ルール】
+・女性：絵文字を1〜5個使用（ランダムに自然な箇所へ）
+・男性：絵文字を0〜1個使用
+・未回答：絵文字なし
+・絵文字の直後は必ず改行する
 
-【禁止】
-・「**」や「""」などの記号、箇条書き・見出しは使わない（ふつうの会話文のみ）。
-・過度な敬語（「スタッフの皆様」「貴店」等）や、AIが書いたと分かる文体。
+【禁止事項】
+・「**」「""」などのAI的な記号は使用禁止
+・箇条書き・見出し禁止（普通の会話文のみ）
+・「スタッフの皆様」「貴店」「〇〇様（スタッフ名＋様）」などの過度な敬語禁止
+・AIが書いたと分かるような文体禁止
 
-【書き方・長さ・崩し具合・終わり方・改行の“見本”（内容は今回と無関係。語句や題材は絶対に流用しない。中身の濃さ・具体性のレベル感だけ参考に）】
-例1（改行あり）：
-前から気になっていたお店で、思いきって予約してみました。
-最初は少し緊張したんですが、担当の方がこちらの悩みをちゃんと聞いてくれて、こうするとまとまりやすいですよと提案してくれたのが嬉しかったです。
-仕上がりも自然で、家で乾かすだけで朝のセットがすごく楽になりました。また次もお願いしようと思います😊
-例2（改行あり）：
-子どものことでずっと迷っていたんですが、評判を聞いて行ってみることにしました。
-先生が威圧的なところが全然なくて、細かい質問にも一つひとつ丁寧に答えてくれたので安心できました。進め方も押し付けがなく、納得しながらお願いできたのが良かったです。
-それまで少し苦手意識があったぶん、ここに出会えてほっとしています
-例3（改行なし・ひと続き）：デスクワークで肩こりがひどくて、藁にもすがる思いで行きました。体の状態を見ながら、なぜここが張っているのかまで説明してくれるので納得感がありました。施術後は首から肩がすっと軽くなって、家でできる姿勢のクセの直し方まで教えてもらえたのも助かりました。しばらく通ってみようと思える場所でした
+【ネガティブ対応】
+・ネガティブな内容が含まれる場合、「でも全体的には満足した」「次回は改善されることを期待したい」などのフォローを自然に添える
 
-クチコミ本文だけを出力してください。前置き・説明・かぎ括弧は不要です。`;
+【MEOキーワード】
+以下のキーワードを文章の流れを壊さない範囲で自然に盛り込む：
+${SALON_CONFIG.meoKeywords.join('、')}
+
+【追加指示】
+${SALON_CONFIG.promptNote}
+
+クチコミ文章のみを出力し、前置きや説明は一切不要です。`;
 }
 
-function buildPrompt(v) {
+function buildPrompt() {
+  const getLabels = (ids, source) => ids.map(id => { const f = source.find(x => x.id === id); return f ? f.label : id; });
   const allGood = Object.values(SALON_CONFIG.goodPoints).flat();
   const serviceLabels = state.services.map(id => { const s = SALON_CONFIG.services.find(x => x.id === id); return s ? s.label : id; });
-
-  // 選択された項目を1つのプールにまとめ、ランダムに一部だけ採用する
-  // → 選んだ全項目を毎回入れると文章が画一的になり「やらせ感」が出るのを防ぐ
-  const pool = [];
-  const add = (ids, src) => ids.forEach(id => { const f = src.find(x => x.id === id); if (f) pool.push({ label: f.label, neg: !!f.negative }); });
-  add(state.goodPoints, allGood);
-  add(state.recommendations, SALON_CONFIG.recommendations);
-  add(state.changes, SALON_CONFIG.changes);
-  add(state.staffImpressions, SALON_CONFIG.staffImpressions);
-  const pos = pool.filter(p => !p.neg);
-  const negs = pool.filter(p => p.neg);
-  // 選んだ項目は基本すべて反映。上限(maxPts)を超えるときだけランダムに間引く
-  let chosen = pos.length > v.maxPts ? shuffle(pos).slice(0, v.maxPts) : shuffle(pos);
-  if (chosen.length === 0 && pos.length) chosen = [pick(pos)];
-  if (negs.length && Math.random() < 0.5) chosen.push(pick(negs));      // ネガは選ばれていれば半々で1つだけ
-  chosen = shuffle(chosen);
-  const hasNeg = chosen.some(c => c.neg);
-
+  const goodLabels = getLabels(state.goodPoints, allGood);
+  const recLabels = getLabels(state.recommendations, SALON_CONFIG.recommendations);
+  const changeLabels = getLabels(state.changes, SALON_CONFIG.changes);
+  const staffLabels = getLabels(state.staffImpressions, SALON_CONFIG.staffImpressions);
+  const hasNeg = [...state.goodPoints, ...state.recommendations, ...state.changes, ...state.staffImpressions]
+    .some(id => allGood.concat(SALON_CONFIG.recommendations, SALON_CONFIG.changes, SALON_CONFIG.staffImpressions).find(x => x.id === id)?.negative);
   const genderText = { female: '女性', male: '男性', other: '未回答' }[state.gender] || '未回答';
   const ageText = { '20s': '20代以下', '30s': '30代', '40s': '40代', '50s': '50代以上' }[state.age] || '';
-  const emojiInstr = v.emojiOn ? `絵文字を${v.emojiN}個だけ自然な位置に` : '絵文字は使わない';
 
-  return `次の条件で、${SALON_CONFIG.salonName}のGoogleクチコミを1件書いてください。
+  return `以下の情報をもとに、${SALON_CONFIG.salonName}のGoogleクチコミ文章を作成してください。
 
-【今回の書き方（毎回変える。ここに従う）】
-・書き出し：${v.opening}
-・口調：${v.register}
-・満足の温度：${v.enthusiasm}
-・終わり方：${v.ending}
-・長さ：${v.hint}（${v.targetLen}字前後。必ず150字以上にする。短くても中身は薄くしない）
-・改行：${v.lineBreaks ? '読みやすいように2〜3個の短い段落に改行で分ける' : '改行せず、ひと続きの文章で書く'}
-・絵文字：${emojiInstr}
-・締めの記号：${v.closer}（必ず文を最後まで言い切ってから締める。言いかけで切らない）
+【店舗名】${SALON_CONFIG.salonName}
+【利用したサービス】${serviceLabels.join('・')}
+【性別】${genderText}
+【年代】${ageText}
+【満足度】${state.score}/10
+【良かった点】${goodLabels.join('、')}
+【おすすめしたい方】${recLabels.join('、')}
+【利用後の変化】${changeLabels.join('、')}
+【スタッフ・お店の印象】${staffLabels.join('、')}
+【自由記述】${state.freeText || 'なし'}
+【ネガティブ要素の有無】${hasNeg ? 'あり（全体的に満足したという自然なフォローを添えること）' : 'なし'}
 
-【この人】性別=${genderText} ／ 年代=${ageText}
-【利用したサービス】${serviceLabels.join('・') || 'なし'}（全部書かなくてよい）
-【必ず反映する体験ポイント（お客さんが実際に選んだ内容。下記は省略せず、すべて文章に自然に織り込む。順番は自由）】
-${chosen.map(c => '・' + c.label).join('\n') || '・特になし'}
-【本人が書いた自由記述（あれば最優先で活かす）】${state.freeText || 'なし'}
-【ネガティブ】${hasNeg ? 'あり：一つだけ軽く触れて、でも全体は満足、という感じに' : 'なし'}
-
-重要：上の「体験ポイント」は飾りではなく中身です。一つ残らず、それぞれが分かる形で文章に盛り込むこと（ただし箇条書きにせず会話文で自然に）。選ばれていない内容を大きく創作して水増ししない（来店のきっかけ程度の一般的な補足だけはOK）。
-※ system例文はあくまで“書き方・崩し具合”の見本です。店や体験の内容は上の情報だけを使い、例文の題材（ラーメン・美容室・歯医者など）は絶対に使わないこと。`;
+上記の情報を自然な会話文にまとめ、実際の体験として書いてください。`;
 }
 
 function copyReview() {
@@ -842,12 +801,14 @@ function copyReview() {
 function regenerate() { generateReview(); }
 
 function resetAll() {
-  Object.assign(state, { services: [], gender: null, age: null, goodPoints: [], recommendations: [], changes: [], staffImpressions: [], freeText: "" });
+  Object.assign(state, { services: [], gender: null, age: null, goodPoints: [], recommendations: [], changes: [], staffImpressions: [], freeText: "", score: null });
   document.querySelectorAll('.checkbox-item').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.radio-btn').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.score-btn').forEach(el => el.classList.remove('selected'));
   document.getElementById('free-text').value = '';
   document.getElementById('btn-step1-next').disabled = true;
   document.getElementById('btn-step2-next').disabled = true;
+  document.getElementById('btn-generate').disabled = true;
   goStep(0);
 }
 </script>
