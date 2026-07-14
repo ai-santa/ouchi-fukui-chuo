@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+<!-- TEMPLATE_VERSION: v1.0 (2026-07-08) 新8ページ構成・性別絵文字対応・テンション選び直しUI -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -521,7 +522,16 @@
   <a id="google-review-link" href="#" target="_blank" class="btn btn-google" style="text-decoration:none;text-align:center;display:block;">
     Googleクチコミへ投稿する
   </a>
-  <button class="btn btn-outline" onclick="regenerate()">作り直す</button>
+  <div class="divider"></div>
+  <div style="text-align:center;font-size:12.5px;color:var(--mid);margin-bottom:8px;">雰囲気を変えて作り直せます</div>
+  <div class="radio-group" id="tension-group-result" style="margin-bottom:12px;">
+    <div class="radio-btn" onclick="selectTensionResult(1,this)">落ち着いて</div>
+    <div class="radio-btn" onclick="selectTensionResult(2,this)">ひかえめ</div>
+    <div class="radio-btn" onclick="selectTensionResult(3,this)">おまかせ</div>
+    <div class="radio-btn" onclick="selectTensionResult(4,this)">明るめ</div>
+    <div class="radio-btn" onclick="selectTensionResult(5,this)">元気に</div>
+  </div>
+  <button class="btn btn-outline" onclick="regenerate()">この雰囲気で作り直す</button>
   <button class="btn btn-secondary" onclick="resetAll()">最初からやりなおす</button>
 </div>
 
@@ -572,6 +582,10 @@ function goStep(n) {
     document.getElementById('progress-text').textContent = n + ' / ' + TOTAL_STEPS;
   }
   if (n === 3) buildStep3();
+  if (n === 9) {
+    const t = state.tension || 3;
+    document.querySelectorAll('#tension-group-result .radio-btn').forEach((b, i) => b.classList.toggle('selected', i === t - 1));
+  }
 }
 
 function buildServices() {
@@ -604,6 +618,14 @@ function selectTension(val, el) {
   document.querySelectorAll('#tension-group .radio-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   state.tension = val;
+}
+
+function selectTensionResult(val, el) {
+  document.querySelectorAll('#tension-group-result .radio-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.tension = val;
+  // Q7側の選択もそろえる
+  document.querySelectorAll('#tension-group .radio-btn').forEach((b, i) => b.classList.toggle('selected', i === val - 1));
 }
 
 function buildStep3() {
@@ -719,12 +741,24 @@ var HUMANIZE_DEFAULT = { name:'一般', tone:'ですます調で自然・素朴'
 function humanizeProfile(bt){ for(var i=0;i<HUMANIZE_PROFILES.length;i++){ if(HUMANIZE_PROFILES[i].key.test(bt||'')) return HUMANIZE_PROFILES[i]; } return HUMANIZE_DEFAULT; }
 
 // テンションメーター(1〜5)で絵文字・記号の量を決める。入力者が選ぶ。既定は3（おまかせ＝業種の自然な量）。
-function humanizeEmojiByTension(prof, tension){
+// gender='male' のときは、♡💕💖😍🎵などの可愛い系・女性的な絵文字を避け、😊✨や(^^)☆◎‼️など中性的なものに限定する。
+var MALE_NO_EMOJI = '♡💕💖😍🎵などの可愛い系・女性的な絵文字は使わず、😊 ✨ (^^) ☆ ◎ ‼️ などの中性的な絵文字・記号だけにする';
+function humanizeEmojiByTension(prof, tension, gender){
+  var male = (gender === 'male');
   if (tension <= 1) return '絵文字・記号は一切使わない。「！」も使わず、淡々とした落ち着いた文章にする';
   if (tension === 2) return '絵文字・記号はほぼ使わない（使っても文末に控えめな記号を1個まで）。「！」も多くて1回';
-  if (tension === 3) return hPickW(prof.emoji).r;   // おまかせ＝実データ準拠の自然な量
-  if (tension === 4) return 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 🎵 ✨ などを2〜4個、明るめに使う。「！」も1〜3回。楽しさが伝わる感じに';
-  return 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 😍 🎵 💕 ✨ などの明るい絵文字を3〜6個たっぷり使う。「！」も多めに。とても元気で明るいテンションにする';
+  if (tension === 3){
+    var r = hPickW(prof.emoji).r;
+    return male ? r + '（ただし' + MALE_NO_EMOJI + '）' : r;
+  }
+  if (tension === 4){
+    return male
+      ? '😊 ✨ (^^) ☆ ◎ ‼️ などの中性的な絵文字・記号を2〜3個、明るめに使う。「！」も1〜3回。' + MALE_NO_EMOJI
+      : 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 🎵 ✨ などを2〜4個、明るめに使う。「！」も1〜3回。楽しさが伝わる感じに';
+  }
+  return male
+    ? '😊 ✨ (^^) ☆ ◎ ‼️ などの中性的な絵文字・記号を3〜5個たっぷり使い、「！」も多めに。とても元気で明るいテンションにする。' + MALE_NO_EMOJI
+    : 'この業種に合う絵文字・記号（' + prof.palette + '）や 😊 😍 🎵 💕 ✨ などの明るい絵文字を3〜6個たっぷり使う。「！」も多めに。とても元気で明るいテンションにする';
 }
 
 // 書き出しの型：作り話ではなく「実際の回答/メッセージのどこから書くか」の順番だけを変える
@@ -760,7 +794,7 @@ function humanizeDrawPersona(){
     opening: hasFree && Math.random() < 0.6 ? HUMANIZE_OPENINGS_FREE : hPick(HUMANIZE_OPENINGS),
     closing: hPick(HUMANIZE_CLOSINGS),
     length: hPickW(lengthBands).r,
-    emoji: humanizeEmojiByTension(prof, tension),
+    emoji: humanizeEmojiByTension(prof, tension, state.gender),
     brk: hPickW(HUMANIZE_BREAKS).r,
     hasFree: hasFree,
   };
